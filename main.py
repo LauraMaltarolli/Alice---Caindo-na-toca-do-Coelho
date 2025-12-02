@@ -13,77 +13,67 @@ FPS = 60
 HIGH_SCORE_FILE = "highscore.txt"
 
 # Cores
-BLACK = (10, 0, 20)  # Fundo escuro para túnel
+FASE_1_COLOR = (20, 0, 40)
+FASE_1_COLOR_END = (40, 0, 70)
+FASE_2_COLOR = (0, 10, 40)
+FASE_2_COLOR_END = (0, 40, 90)
+FASE_3_COLOR = (60, 0, 40)
+FASE_3_COLOR_END = (120, 20, 80)
+
+# Fundo escuro para túnel
+BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 LIGHT_GRAY = (180, 180, 180)
-DIM_GRAY = (80, 80, 80)  # Cor adicional para profundidade
-RED = (211, 47, 47)  # Obstáculo real (Perigo)
-BLUE = (33, 150, 243)  # Obstáculo falso (Seguro)
+DIM_GRAY = (80, 80, 80)
+
+# Cor adicional para profundidade
+RED = (211, 47, 47)       # Obstáculo real (Perigo)
+BLUE = (33, 150, 243)     # Obstáculo falso (Seguro)
 PLAYER_COLOR_NORMAL = (173, 216, 230)  # Alice azul claro
 PLAYER_COLOR_SHRINK = (100, 200, 100)  # Alice verde ao encolher
-PLAYER_COLOR_GROW = (255, 100, 100)  # Alice rosa ao crescer
-GREEN = (76, 175, 80)  # Item "Beba-me" (Encolher)
-PURPLE = (156, 39, 176)  # Item "Coma-me" (Crescer)
-YELLOW = (255, 255, 0)  # Para partículas/destaques
+PLAYER_COLOR_GROW = (255, 100, 100)    # Alice rosa ao crescer
+GREEN = (76, 175, 80)     # Item "Beba-me" (Encolher)
+PURPLE = (156, 39, 176)   # Item "Coma-me" (Crescer)
+YELLOW = (255, 255, 0)    # Para partículas/destaques
 
 # Posição Y da Alice (primeiro quarto/terço da tela)
 PLAYER_START_Y = SCREEN_HEIGHT * 0.25
 
-
 # --- Classe para Efeitos de Partículas ---
 class Particle(pygame.sprite.Sprite):
     """Cria uma explosão de partículas em um ponto. 100% procedural."""
-
-    def __init__(
-        self,
-        center,
-        color,
-        min_speed=1,
-        max_speed=5,
-        size=5,
-        num_particles=10,
-    ):
+    def __init__(self, center, color, min_speed=1, max_speed=5, size=5, num_particles=10):
         super().__init__()
         self.particles = []
         for _ in range(num_particles):
-            self.particles.append(
-                {
-                    "pos": list(center),
-                    "speed": [
-                        random.uniform(-max_speed, max_speed),
-                        random.uniform(-max_speed, max_speed),
-                    ],
-                    "color": color,
-                    "radius": random.randint(min_speed, size),
-                }
-            )
+            self.particles.append({
+                'pos': list(center),
+                'speed': [random.uniform(-max_speed, max_speed), random.uniform(-max_speed, max_speed)],
+                'color': color,
+                'radius': random.randint(min_speed, size)
+            })
 
     def update(self):
-        for p in self.particles:
-            p["pos"][0] += p["speed"][0]
-            p["pos"][1] += p["speed"][1]
-            p["radius"] -= 0.1  # Partículas encolhem e desaparecem
-            if p["radius"] <= 0:
+        # Atualiza posições e encolhe partículas
+        for p in self.particles[:]:
+            p['pos'][0] += p['speed'][0]
+            p['pos'][1] += p['speed'][1]
+            p['radius'] -= 0.1  # Partículas encolhem e desaparecem
+            if p['radius'] <= 0:
                 self.particles.remove(p)
         if not self.particles:
             self.kill()  # Remove o sprite de partículas quando todas sumirem
 
     def draw(self, surface):
         for p in self.particles:
-            if p["radius"] > 0:
-                pygame.draw.circle(
-                    surface,
-                    p["color"],
-                    (int(p["pos"][0]), int(p["pos"][1])),
-                    int(p["radius"]),
-                )
+            if p['radius'] > 0:
+                pygame.draw.circle(surface, p['color'], (int(p['pos'][0]), int(p['pos'][1])), int(p['radius']))
 
 
 # --- Classe do Jogador ("Alice") ---
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-
         # Carrega sprites originais
         alice_raw = pygame.image.load("assets/alice.png").convert_alpha()
 
@@ -106,7 +96,6 @@ class Player(pygame.sprite.Sprite):
         # Começa com o sprite normal
         self.image = self.sprite_normal
         self.rect = self.image.get_rect()
-
         # Posição inicial
         self.rect.centerx = SCREEN_WIDTH // 2
         self.rect.centery = PLAYER_START_Y
@@ -187,20 +176,19 @@ class TunnelObject(pygame.sprite.Sprite):
         self.speed = speed
 
         # ========= DEFINIÇÕES DOS TAMANHOS PROPORCIONAIS =========
-        if self.obj_type == "danger":
+        if self.obj_type == 'danger':
             width = random.randint(40, 100)
             height = random.randint(15, 30)
             image_path = "assets/obstaculo.png"
-        elif self.obj_type == "fake":
-            width = random.randint(40, 100)
-            height = random.randint(15, 30)
-            image_path = "assets/obstaculo_falso.png"
-        elif self.obj_type == "shrink":
+        elif self.obj_type == 'shrink':
             width = height = 28
             image_path = "assets/beba_me.png"  # diminui Alice
-        elif self.obj_type == "grow":
+        elif self.obj_type == 'grow':
             width = height = 32
             image_path = "assets/coma_me.png"  # aumenta Alice
+        else:
+            width = height = 30
+            image_path = "assets/obstaculo.png"
 
         # ========= CARREGAR A IMAGEM =========
         original_img = pygame.image.load(image_path).convert_alpha()
@@ -223,11 +211,9 @@ class TunnelObject(pygame.sprite.Sprite):
 class BackgroundElement(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-
         # Partícula/Estrela simples
         size = random.randint(1, 4)
         self.image = pygame.Surface((size, size))
-
         # Cores variadas para ilusão de profundidade
         self.image.fill(random.choice([WHITE, LIGHT_GRAY, DIM_GRAY]))
         self.rect = self.image.get_rect()
@@ -250,17 +236,15 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption(GAME_TITLE)
         self.clock = pygame.time.Clock()
-
-        self.font_main = pygame.font.Font(pygame.font.match_font("arial"), 48)
-        self.font_small = pygame.font.Font(pygame.font.match_font("arial"), 24)
-        self.font_tiny = pygame.font.Font(pygame.font.match_font("arial"), 18)
+        self.font_main = pygame.font.Font(pygame.font.match_font('arial'), 48)
+        self.font_small = pygame.font.Font(pygame.font.match_font('arial'), 24)
+        self.font_tiny = pygame.font.Font(pygame.font.match_font('arial'), 18)
 
         self.running = True
-        self.game_state = "START"  # Estados: START, PLAYING, GAME_OVER
+        self.game_state = 'START'  # Estados: START, PLAYING, GAME_OVER
         self.score = 0
         self.high_score = 0
         self.game_speed = 0  # Velocidade inicial para objetos caindo
-
         self.load_high_score()
 
         # Eventos customizados
@@ -272,7 +256,7 @@ class Game:
         """Carrega o high score do arquivo."""
         if os.path.exists(HIGH_SCORE_FILE):
             try:
-                with open(HIGH_SCORE_FILE, "r") as f:
+                with open(HIGH_SCORE_FILE, 'r') as f:
                     self.high_score = int(f.read())
             except ValueError:
                 self.high_score = 0
@@ -283,7 +267,7 @@ class Game:
         """Salva o high score se for maior que o anterior."""
         if self.score > self.high_score:
             self.high_score = self.score
-            with open(HIGH_SCORE_FILE, "w") as f:
+            with open(HIGH_SCORE_FILE, 'w') as f:
                 f.write(str(self.high_score))
 
     def new_game(self):
@@ -295,7 +279,7 @@ class Game:
         # Limpa todos os grupos
         self.all_sprites = pygame.sprite.Group()
         self.tunnel_objects = pygame.sprite.Group()  # Obstáculos e itens
-        self.background_elements = pygame.sprite.Group()  # Estrelas e objetos de Alice
+        self.background_elements = pygame.sprite.Group()  # Estrelas e objetos de fundo
         self.particles = pygame.sprite.Group()  # Efeitos de partículas
 
         # Cria o jogador
@@ -308,19 +292,19 @@ class Game:
             self.all_sprites.add(bg_elem)
             self.background_elements.add(bg_elem)
 
-        # Inicia o timer de spawn de objetos
-        pygame.time.set_timer(self.SPAWN_OBJECT_EVENT, 1200)  # Primeiro spawn em 1.2 seg
-        self.game_state = "PLAYING"
+        # Inicia o timer de spawn de objetos (primeiro spawn em 1.2 seg)
+        pygame.time.set_timer(self.SPAWN_OBJECT_EVENT, 1200)
+        self.game_state = 'PLAYING'
 
     def run(self):
         """Loop principal que gerencia os estados do jogo."""
         while self.running:
             self.clock.tick(FPS)
-            if self.game_state == "START":
+            if self.game_state == 'START':
                 self.show_start_screen()
-            elif self.game_state == "PLAYING":
+            elif self.game_state == 'PLAYING':
                 self.run_game_loop()
-            elif self.game_state == "GAME_OVER":
+            elif self.game_state == 'GAME_OVER':
                 self.show_game_over_screen()
         pygame.quit()
 
@@ -330,17 +314,16 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+
             if event.type == self.SPAWN_OBJECT_EVENT:
                 # Escolhe o que spawnar
                 rand_val = random.random()
                 if rand_val < 0.45:
-                    obj_type = "danger"
-                elif rand_val < 0.80:
-                    obj_type = "fake"
+                    obj_type = 'danger'
                 elif rand_val < 0.90:
-                    obj_type = "shrink"
+                    obj_type = 'shrink'
                 else:
-                    obj_type = "grow"
+                    obj_type = 'grow'
 
                 # Cria e adiciona o novo objeto
                 new_obj = TunnelObject(obj_type, self.game_speed)
@@ -356,7 +339,7 @@ class Game:
 
         # --- Atualização (Update) ---
         self.all_sprites.update()  # Atualiza todos os sprites
-        self.particles.update()  # Atualiza apenas as partículas
+        self.particles.update()    # Atualiza apenas as partículas
 
         # Aumenta a velocidade do jogo gradualmente
         self.game_speed += 0.001
@@ -367,76 +350,40 @@ class Game:
         # --- Verificação de Colisões ---
         hits = pygame.sprite.spritecollide(self.player, self.tunnel_objects, False)
         for hit in hits:
-            if hit.obj_type == "danger":
+            if hit.obj_type == 'danger':
                 # Game Over!
-                self.particles.add(
-                    Particle(
-                        self.player.rect.center, RED, size=8, num_particles=30
-                    )
-                )
+                self.particles.add(Particle(self.player.rect.center, RED, size=8, num_particles=30))
                 self.shake_screen(300)  # Tremer a tela por 300ms
-                self.game_state = "GAME_OVER"
+                self.game_state = 'GAME_OVER'
                 self.save_high_score()
-            elif hit.obj_type == "fake":
-                # Feedback visual ao atravessar
-                self.particles.add(
-                    Particle(
-                        hit.rect.center,
-                        BLUE,
-                        min_speed=0.5,
-                        max_speed=2,
-                        size=3,
-                        num_particles=5,
-                    )
-                )
-                hit.kill()  # Remove o obstáculo falso após ser "atravessado"
-            elif hit.obj_type == "shrink":
+            elif hit.obj_type == 'shrink':
                 self.player.shrink()
-                self.particles.add(
-                    Particle(
-                        hit.rect.center, GREEN, min_speed=1, max_speed=4, size=6, num_particles=15
-                    )
-                )
+                self.particles.add(Particle(hit.rect.center, GREEN, min_speed=1, max_speed=4, size=6, num_particles=15))
                 hit.kill()
-            elif hit.obj_type == "grow":
+            elif hit.obj_type == 'grow':
                 self.player.grow()
-                self.particles.add(
-                    Particle(
-                        hit.rect.center,
-                        PURPLE,
-                        min_speed=1,
-                        max_speed=4,
-                        size=6,
-                        num_particles=15,
-                    )
-                )
+                self.particles.add(Particle(hit.rect.center, PURPLE, min_speed=1, max_speed=4, size=6, num_particles=15))
                 hit.kill()
 
         # --- Desenho (Render) ---
-        self.screen.fill(BLACK)
+        self.screen.fill(self.get_background_color())
 
         # Desenha em camadas: fundo, objetos, jogador, partículas
         self.background_elements.draw(self.screen)
         self.tunnel_objects.draw(self.screen)
-        self.all_sprites.draw(self.screen)  # O player está aqui
-        self.particles.draw(self.screen)  # Desenha partículas por cima
+        self.all_sprites.draw(self.screen)
+
+        # Desenha partículas por cima
+        for p in self.particles:
+            p.draw(self.screen)
 
         # Desenha HUD
         self.draw_text(f"Score: {self.score}", self.font_small, WHITE, SCREEN_WIDTH / 2, 10)
-        self.draw_text(
-            f"High Score: {self.high_score}",
-            self.font_tiny,
-            LIGHT_GRAY,
-            SCREEN_WIDTH / 2,
-            40,
-        )
-
+        self.draw_text(f"High Score: {self.high_score}", self.font_tiny, LIGHT_GRAY, SCREEN_WIDTH / 2, 40)
         if self.player.effect:
-            powerup_text = (
-                f"Efeito: {self.player.effect.upper()} ("
-                f"{int((self.player.effect_duration - (pygame.time.get_ticks() - self.player.effect_timer)) / 1000) + 1}s)"
-            )
-            color = PLAYER_COLOR_GROW if self.player.effect == "grow" else PLAYER_COLOR_SHRINK
+            remaining = max(0, int((self.player.effect_duration - (pygame.time.get_ticks() - self.player.effect_timer)) / 1000) + 1)
+            powerup_text = f"Efeito: {self.player.effect.upper()} ({remaining}s)"
+            color = PLAYER_COLOR_GROW if self.player.effect == 'grow' else PLAYER_COLOR_SHRINK
             self.draw_text(powerup_text, self.font_tiny, color, SCREEN_WIDTH / 2, 65)
 
         # Aplica o shake na tela
@@ -447,7 +394,7 @@ class Game:
             self.shake_duration -= self.clock.get_time()
 
         final_surface = self.screen.copy()  # Copia o que foi desenhado
-        self.screen.fill(BLACK)  # Limpa a tela real
+        self.screen.fill(BLACK)            # Limpa a tela real
         self.screen.blit(final_surface, (offset_x, offset_y))  # Desenha com offset
 
         pygame.display.flip()
@@ -470,51 +417,18 @@ class Game:
                     waiting = False
 
             start_elements.update()
-
             self.screen.fill(BLACK)
             start_elements.draw(self.screen)
 
-            self.draw_text(
-                GAME_TITLE, self.font_main, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4
-            )
-            self.draw_text(
-                "Caindo na Toca do Coelho",
-                self.font_small,
-                PLAYER_COLOR_NORMAL,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 4 + 60,
-            )
-            self.draw_text(
-                "Desvie do VERMELHO. Atravesse o AZUL.",
-                self.font_small,
-                WHITE,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2 - 30,
-            )
-            self.draw_text(
-                "Pegue VERDE para encolher, ROXO para crescer (e dobrar pontos!)",
-                self.font_tiny,
-                WHITE,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2 + 10,
-            )
-            self.draw_text(
-                "Use as Setas <- e -> para mover a Alice",
-                self.font_small,
-                WHITE,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT * 0.7,
-            )
+            self.draw_text(GAME_TITLE, self.font_main, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4)
+            self.draw_text("Caindo na Toca do Coelho", self.font_small, PLAYER_COLOR_NORMAL, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4 + 60)
+            self.draw_text("Desvie do VERMELHO. Atravesse o AZUL.", self.font_small, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 30)
+            self.draw_text("Pegue VERDE para encolher, ROXO para crescer (e dobrar pontos!)", self.font_tiny, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 10)
+            self.draw_text("Use as Setas <- e -> para mover a Alice", self.font_small, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT * 0.7)
 
             # Efeito de piscar no texto
             if int(pygame.time.get_ticks() / 500) % 2 == 0:
-                self.draw_text(
-                    "Pressione qualquer tecla para começar",
-                    self.font_small,
-                    YELLOW,
-                    SCREEN_WIDTH / 2,
-                    SCREEN_HEIGHT * 0.85,
-                )
+                self.draw_text("Pressione qualquer tecla para começar", self.font_small, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT * 0.85)
 
             pygame.display.flip()
 
@@ -523,51 +437,17 @@ class Game:
     def show_game_over_screen(self):
         """Mostra a tela de Game Over."""
         self.screen.fill(BLACK)
-
-        self.draw_text(
-            "GAME OVER", self.font_main, RED, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4
-        )
+        self.draw_text("GAME OVER", self.font_main, RED, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 4)
 
         if self.score > self.high_score:
             # Mensagem de novo recorde
-            self.draw_text(
-                "NOVO RECORDE!",
-                self.font_small,
-                GREEN,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2 - 40,
-            )
-            self.draw_text(
-                f"Score Final: {self.score}",
-                self.font_small,
-                WHITE,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2,
-            )
+            self.draw_text("NOVO RECORDE!", self.font_small, GREEN, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 40)
+            self.draw_text(f"Score Final: {self.score}", self.font_small, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         else:
-            self.draw_text(
-                f"Score Final: {self.score}",
-                self.font_small,
-                WHITE,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2,
-            )
-            self.draw_text(
-                f"Seu Melhor: {self.high_score}",
-                self.font_tiny,
-                LIGHT_GRAY,
-                SCREEN_WIDTH / 2,
-                SCREEN_HEIGHT / 2 + 30,
-            )
+            self.draw_text(f"Score Final: {self.score}", self.font_small, WHITE, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
 
-        self.draw_text(
-            "Pressione 'R' para tentar novamente",
-            self.font_small,
-            YELLOW,
-            SCREEN_WIDTH / 2,
-            SCREEN_HEIGHT * 0.8,
-        )
-
+        self.draw_text(f"Seu Melhor: {self.high_score}", self.font_tiny, LIGHT_GRAY, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 30)
+        self.draw_text("Pressione 'R' para tentar novamente", self.font_small, YELLOW, SCREEN_WIDTH / 2, SCREEN_HEIGHT * 0.8)
         pygame.display.flip()
 
         # Espera o jogador pressionar 'R'
@@ -583,6 +463,29 @@ class Game:
                         waiting = False
                         self.new_game()
 
+    def lerp_color(self, color1, color2, t):
+        """Interpolação linear de cor (t = 0 → cor1, t = 1 → cor2)."""
+        return (
+            int(color1[0] + (color2[0] - color1[0]) * t),
+            int(color1[1] + (color2[1] - color1[1]) * t),
+            int(color1[2] + (color2[2] - color1[2]) * t)
+        )
+
+    def get_background_color(self):
+        """Retorna uma cor de fundo baseada na fase e no score."""
+        s = self.score
+        # ----- FASE 1 -----
+        if s < 200:
+            t = s / 200
+            return self.lerp_color(FASE_1_COLOR, FASE_1_COLOR_END, t)
+        # ----- FASE 2 -----
+        if s < 500:
+            t = (s - 200) / 300
+            return self.lerp_color(FASE_2_COLOR, FASE_2_COLOR_END, t)
+        # ----- FASE 3 (final) -----
+        t = min((s - 500) / 400, 1)
+        return self.lerp_color(FASE_3_COLOR, FASE_3_COLOR_END, t)
+
     def draw_text(self, text, font, color, x, y):
         """Função helper para desenhar texto na tela."""
         text_surface = font.render(text, True, color)
@@ -593,7 +496,12 @@ class Game:
     def shake_screen(self, duration):
         """Ativa o efeito de tremor na tela."""
         self.shake_duration = duration
-        pygame.time.set_timer(self.SCREEN_SHAKE_EVENT, duration, 1)  # Dispara uma vez
+        # Dispara uma vez
+        try:
+            pygame.time.set_timer(self.SCREEN_SHAKE_EVENT, duration, 1)
+        except TypeError:
+            # Compatibilidade com versões mais antigas do pygame
+            pygame.time.set_timer(self.SCREEN_SHAKE_EVENT, duration)
 
 
 # --- Bloco de Inicialização ---
